@@ -21,6 +21,10 @@ TForm1 *Form1;
 __fastcall TForm1::TForm1(TComponent* Owner)
 	: TForm(Owner)
 {
+	// アプリの起動時は TabItem1 が必ず表示されるようにしておく。
+	TabControl1->ActiveTab = TabItem1;
+
+    // MapView1 のズーム状態の初期値を 15 に設定する。
 	MapView1->Zoom = 15;
 }
 //---------------------------------------------------------------------------
@@ -114,10 +118,16 @@ void __fastcall TForm1::Timer1Timer(TObject *Sender)
 
 	// 加速度センサーに関わる処理
 	{
+		// 傾き表示用の円の直径。
+		const static int circleDiameter = 50;
+
+		// 加速度センサーの値に対する補正係数
+		const static int accelCoefficient = 100;
+
 		// x,y,z軸の加速度を取得する。
-		double AccelX = MotionSensor1->Sensor->AccelerationX*100.0;
-		double AccelY = MotionSensor1->Sensor->AccelerationY*100.0;
-		double AccelZ = MotionSensor1->Sensor->AccelerationZ*100.0;
+		double AccelX = MotionSensor1->Sensor->AccelerationX * accelCoefficient;
+		double AccelY = MotionSensor1->Sensor->AccelerationY * accelCoefficient;
+		double AccelZ = MotionSensor1->Sensor->AccelerationZ * accelCoefficient;
 
 		// 3軸の合成加速度を算出する。
 		// これは加速度ベクトルの大きさ（スカラー成分）だけを取り出す処理。
@@ -147,6 +157,13 @@ void __fastcall TForm1::Timer1Timer(TObject *Sender)
 		// Circle を x, y 軸の加速度の値に合わせて Grid に重ねて表示する。
 		Circle1->Position->X = ((PlotGrid1->Width  - Circle1->Width )/2.0) - (AccelX*10.0);
 		Circle1->Position->Y = ((PlotGrid1->Height - Circle1->Height)/2.0) + (AccelY*10.0);
+
+		// Circle の直径を z軸の加速度に合わせて変える。
+		// スマートフォンの液晶を上向きにしている場合は
+		// z軸は負の値（画面に対して下向き）の重力がかかっているが、
+		// 符号は無視して重力の大きさだけで円の直径を変える。
+		Circle1->Width  = circleDiameter + (abs(AccelZ) - accelCoefficient);
+		Circle1->Height = Circle1->Width;
 
 		// 取得した加速度情報を Memo1 にログとして記録する。
 		Memo1->Lines->Insert(

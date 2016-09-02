@@ -264,7 +264,7 @@ object Form1: TForm1
         end
         object Circle1: TCircle
           Position.X = 176.000000000000000000
-          Position.Y = 263.000000000000000000
+          Position.Y = 272.000000000000000000
           Size.Width = 50.000000000000000000
           Size.Height = 50.000000000000000000
           Size.PlatformDefault = False
