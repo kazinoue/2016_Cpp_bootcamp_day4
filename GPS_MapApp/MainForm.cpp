@@ -156,11 +156,8 @@ void __fastcall TForm1::Timer1Timer(TObject *Sender)
 			? Label3->TextSettings->FontColor = TAlphaColorRec::Black
 			: Label3->TextSettings->FontColor = TAlphaColorRec::Red;
 
-		// Circle の直径を z軸の加速度に合わせて変える。
-		// スマートフォンの液晶を上向きにしている場合は
-		// z軸は負の値（画面に対して下向き）の重力がかかっているが、
-		// 向きは無視して重力の大きさだけで円の直径を変える。
-		Circle1->Width  = circleDiameter + (abs(AccelZ) - accelCoefficient);
+		// Circle の直径を合成加速度に合わせて変える。
+		Circle1->Width  = circleDiameter * syntheticAccel / accelCoefficient;
 		Circle1->Height = Circle1->Width;
 
 		// Circle を x, y 軸の加速度の値に合わせて Grid に重ねて表示する。
