@@ -45,8 +45,7 @@ void __fastcall TForm1::LocationSensor1LocationChanged(TObject *Sender, const TL
 		  const TLocationCoord2D &NewLocation)
 {
 	// 計測した緯度経度を Debug 用の Memo に出力する。
-	UnicodeString LocationString;
-	LocationString.sprintf( L"%2.6f, %2.6f", NewLocation.Latitude, NewLocation.Longitude );
+	UnicodeString LocationString = UnicodeString().sprintf( L"%2.6f, %2.6f", NewLocation.Latitude, NewLocation.Longitude );
 	Memo1->Lines->Insert(0,LocationString);
 
 	// 計測した緯度経度を ListBox 内の Latitude, Longitude にも表示する。
@@ -111,10 +110,13 @@ void __fastcall TForm1::Button1Click(TObject *Sender)
 // ここでは MotionSensor の値に関わる実装を行っている。
 void __fastcall TForm1::Timer1Timer(TObject *Sender)
 {
-	// 3軸の合成加速度。
+	// 加速度。
 	// この変数は値の取得とグラフ描画の両方で使うので、
 	// 両方の処理から参照できるスコープで宣言する。
 	double syntheticAccel;
+	double AccelX;
+	double AccelY;
+	double AccelZ;
 
 	// 加速度センサーに関わる処理
 	{
@@ -125,9 +127,9 @@ void __fastcall TForm1::Timer1Timer(TObject *Sender)
 		const static int accelCoefficient = 100;
 
 		// x,y,z軸の加速度を取得する。
-		double AccelX = MotionSensor1->Sensor->AccelerationX * accelCoefficient;
-		double AccelY = MotionSensor1->Sensor->AccelerationY * accelCoefficient;
-		double AccelZ = MotionSensor1->Sensor->AccelerationZ * accelCoefficient;
+		AccelX = MotionSensor1->Sensor->AccelerationX * accelCoefficient;
+		AccelY = MotionSensor1->Sensor->AccelerationY * accelCoefficient;
+		AccelZ = MotionSensor1->Sensor->AccelerationZ * accelCoefficient;
 
 		// 3軸の合成加速度を算出する。
 		// これは加速度ベクトルの大きさ（スカラー成分）だけを取り出す処理。
@@ -154,24 +156,51 @@ void __fastcall TForm1::Timer1Timer(TObject *Sender)
 			? Label3->TextSettings->FontColor = TAlphaColorRec::Black
 			: Label3->TextSettings->FontColor = TAlphaColorRec::Red;
 
+		// Circle の直径を z軸の加速度に合わせて変える。
+		// スマートフォンの液晶を上向きにしている場合は
+		// z軸は負の値（画面に対して下向き）の重力がかかっているが、
+		// 向きは無視して重力の大きさだけで円の直径を変える。
+		Circle1->Width  = circleDiameter + (abs(AccelZ) - accelCoefficient);
+		Circle1->Height = Circle1->Width;
+
 		// Circle を x, y 軸の加速度の値に合わせて Grid に重ねて表示する。
 		Circle1->Position->X = ((PlotGrid1->Width  - Circle1->Width )/2.0) - (AccelX*10.0);
 		Circle1->Position->Y = ((PlotGrid1->Height - Circle1->Height)/2.0) + (AccelY*10.0);
 
-		// Circle の直径を z軸の加速度に合わせて変える。
-		// スマートフォンの液晶を上向きにしている場合は
-		// z軸は負の値（画面に対して下向き）の重力がかかっているが、
-		// 符号は無視して重力の大きさだけで円の直径を変える。
-		Circle1->Width  = circleDiameter + (abs(AccelZ) - accelCoefficient);
-		Circle1->Height = Circle1->Width;
+		// Circle の計算上の位置が画面の外にはみ出しそうな場合は、
+		// はみ出さないように計算結果を補正する。
+		{
+			bool outOfRange = false;
 
+			if ( Circle1->Position->X < 0 ) {
+				Circle1->Position->X = 0;
+				outOfRange = true;
+			}
+			else if (Circle1->Position->X > PlotGrid1->Width - Circle1->Width) {
+				Circle1->Position->X = PlotGrid1->Width - Circle1->Width;
+				outOfRange = true;
+			}
+
+			if ( Circle1->Position->Y < 0 ) {
+				Circle1->Position->Y = 0;
+				outOfRange = true;
+			}
+			else if (Circle1->Position->Y > PlotGrid1->Height - Circle1-> Height) {
+				Circle1->Position->Y = PlotGrid1->Height - Circle1-> Height;
+				outOfRange = true;
+			}
+
+			// 補正が発生した場合は円の色を赤色に変える。
+			if (outOfRange) Circle1->Stroke->Color = TAlphaColorRec::Red;
+			else            Circle1->Stroke->Color = TAlphaColorRec::Black;
+		}
 		// 取得した加速度情報を Memo1 にログとして記録する。
-		Memo1->Lines->Insert(
-			0,
-			UnicodeString().sprintf(
-				L"%3.2f = X:%3.2f Y:%3.2f Z:%3.2f",
-				syntheticAccel, AccelX, AccelY, AccelZ )
-		);
+//		Memo1->Lines->Insert(
+//			0,
+//			UnicodeString().sprintf(
+//				L"%3.2f = X:%3.2f Y:%3.2f Z:%3.2f",
+//				syntheticAccel, AccelX, AccelY, AccelZ )
+//		);
 	}
 
 	// グラフ描画に関する処理。
@@ -185,8 +214,11 @@ void __fastcall TForm1::Timer1Timer(TObject *Sender)
 
 		// 3軸の合成加速度をグラフ（TeeChart）に描画する処理。
 		Chart1->Series[0]->AddY(syntheticAccel);
+		Chart1->Series[1]->AddY(AccelX);
+		Chart1->Series[2]->AddY(AccelY);
+		Chart1->Series[3]->AddY(AccelZ);
 
-		// 3軸の合成加速度グラフを直近10秒分 ( = 0.2 秒 x 50サンプル）だけ描画するための横軸範囲の調整。
+		// 3軸の合成加速度グラフを直近10秒分 ( = 0.2 秒 x 50サンプル ）だけ描画するための横軸範囲の調整。
 		if ( numCount++ > axis_x_limit ) {
 			Chart1->Axes->Bottom->SetMinMax(numCount - axis_x_limit, numCount);
 		}
@@ -200,4 +232,5 @@ void __fastcall TForm1::Switch2Switch(TObject *Sender)
 	Timer1->Enabled = Switch2->IsChecked;
 }
 //---------------------------------------------------------------------------
+
 

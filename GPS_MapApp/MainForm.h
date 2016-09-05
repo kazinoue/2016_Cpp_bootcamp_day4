@@ -67,6 +67,9 @@ __published:	// IDE で管理されるコンポーネント
 	TLineSeries *Series1;
 	TStyleBook *StyleBook1;
 	TSwitch *Switch2;
+	TLineSeries *Series2;
+	TLineSeries *Series3;
+	TLineSeries *Series4;
 	void __fastcall Switch1Switch(TObject *Sender);
 	void __fastcall LocationSensor1LocationChanged(TObject *Sender, const TLocationCoord2D &OldLocation,
           const TLocationCoord2D &NewLocation);
