@@ -22,17 +22,14 @@ __fastcall TForm1::TForm1(TComponent* Owner)
 	: TForm(Owner)
 {
 	// アプリの起動時は TabItem1 が必ず表示されるようにしておく。
-	TabControl1->ActiveTab = TabItem1;
-
-    // MapView1 のズーム状態の初期値を 15 に設定する。
-	MapView1->Zoom = 15;
+	TabControl1->ActiveTab = TabItem1MapView;
 }
 //---------------------------------------------------------------------------
-// Switch1 が押されたときの処理。
-void __fastcall TForm1::Switch1Switch(TObject *Sender)
+// SwitchMapView が押されたときの処理。
+void __fastcall TForm1::SwitchMapViewSwitch(TObject *Sender)
 {
 	// 衛星画像と通常地図の切り替えを行う
-	if (Switch1->IsChecked) {
+	if (SwitchMapView->IsChecked) {
 		MapView1->MapType = TMapType::Satellite;
 	}
 	else {
@@ -57,7 +54,7 @@ void __fastcall TForm1::LocationSensor1LocationChanged(TObject *Sender, const TL
 	MapView1->Location = mapCenter;
 
 	// 現在の緯度経度に対応する住所を取得するための一連の処理。
-	try {
+	{
 		// TGeocoder の初期化と生成を行う。
 		if ( FGeocoder == NULL ) {
 			if( TGeocoder::Current != NULL ) {
@@ -75,15 +72,12 @@ void __fastcall TForm1::LocationSensor1LocationChanged(TObject *Sender, const TL
 		if ( (FGeocoder != NULL) && (FGeocoder->Geocoding) ) {
 			FGeocoder->GeocodeReverse(NewLocation);
 		}
-	} catch (...) {
-		ListBoxGroupHeader1->Text = "Getcoder service error";
 	}
 }
 //---------------------------------------------------------------------------
 // 逆ジオコーディング実行時の処理
 void __fastcall TForm1::OnGeocodeReverseEvent(TCivicAddress* const Address)
 {
-
 	// 緯度経度から現在位置の住所が取得できた場合は表示を更新する。
 	if( Address != NULL ) {
 		ListBoxItemAdminArea->ItemData->Detail       = Address->AdminArea;
@@ -99,8 +93,8 @@ void __fastcall TForm1::OnGeocodeReverseEvent(TCivicAddress* const Address)
 	}
 }
 //---------------------------------------------------------------------------
-// Button1 が押されたときの処理。
-void __fastcall TForm1::Button1Click(TObject *Sender)
+// ButtonShowCurrentLocation が押されたときの処理。
+void __fastcall TForm1::ButtonShowCurrentLocationClick(TObject *Sender)
 {
 	// 地図の表示を現在位置中心にする。
 	MapView1->Location = mapCenter;
@@ -118,13 +112,13 @@ void __fastcall TForm1::Timer1Timer(TObject *Sender)
 	double AccelY;
 	double AccelZ;
 
+	// 加速度センサーの値に対する補正係数
+	const static int accelCoefficient = 100;
+
 	// 加速度センサーに関わる処理
 	{
 		// 傾き表示用の円の直径。
 		const static int circleDiameter = 50;
-
-		// 加速度センサーの値に対する補正係数
-		const static int accelCoefficient = 100;
 
 		// x,y,z軸の加速度を取得する。
 		AccelX = MotionSensor1->Sensor->AccelerationX * accelCoefficient;
@@ -138,66 +132,59 @@ void __fastcall TForm1::Timer1Timer(TObject *Sender)
 		syntheticAccel = sqrt( pow(AccelX,2) + pow(AccelY,2) + pow(AccelZ,2) );
 
 		// 取得した値をラベルに出力する。
-		Label1->Text = UnicodeString().sprintf( L"X: %3.2f", AccelX );
-		Label2->Text = UnicodeString().sprintf( L"Y: %3.2f", AccelY );
-		Label3->Text = UnicodeString().sprintf( L"Z: %3.2f", AccelZ );
-		Label4->Text = UnicodeString().sprintf( L"accel: %3.2f", syntheticAccel );
+		Label1AccelX->Text = UnicodeString().sprintf( L"X: %3.2f", AccelX );
+		Label2AccelY->Text = UnicodeString().sprintf( L"Y: %3.2f", AccelY );
+		Label3AccelZ->Text = UnicodeString().sprintf( L"Z: %3.2f", AccelZ );
+		LabelSyntheticAccel->Text = UnicodeString().sprintf( L"accel: %3.2f", syntheticAccel );
 
 		// 加速度の + - によってフォントの色を変える。
 		// 三項演算子を使用
 		// (式) ? (true の場合の処理) : (false の場合の処理)
 		AccelX >= 0
-			? Label1->TextSettings->FontColor = TAlphaColorRec::Black
-			: Label1->TextSettings->FontColor = TAlphaColorRec::Red;
+			? Label1AccelX->TextSettings->FontColor = TAlphaColorRec::Black
+			: Label1AccelX->TextSettings->FontColor = TAlphaColorRec::Red;
 		AccelY >= 0
-			? Label2->TextSettings->FontColor = TAlphaColorRec::Black
-			: Label2->TextSettings->FontColor = TAlphaColorRec::Red;
+			? Label2AccelY->TextSettings->FontColor = TAlphaColorRec::Black
+			: Label2AccelY->TextSettings->FontColor = TAlphaColorRec::Red;
 		AccelZ >= 0
-			? Label3->TextSettings->FontColor = TAlphaColorRec::Black
-			: Label3->TextSettings->FontColor = TAlphaColorRec::Red;
+			? Label3AccelZ->TextSettings->FontColor = TAlphaColorRec::Black
+			: Label3AccelZ->TextSettings->FontColor = TAlphaColorRec::Red;
 
 		// Circle の直径を合成加速度に合わせて変える。
-		Circle1->Width  = circleDiameter * syntheticAccel / accelCoefficient;
-		Circle1->Height = Circle1->Width;
+		CircleTiltSensor->Width  = circleDiameter * syntheticAccel / accelCoefficient;
+		CircleTiltSensor->Height = CircleTiltSensor->Width;
 
 		// Circle を x, y 軸の加速度の値に合わせて Grid に重ねて表示する。
-		Circle1->Position->X = ((PlotGrid1->Width  - Circle1->Width )/2.0) - (AccelX*10.0);
-		Circle1->Position->Y = ((PlotGrid1->Height - Circle1->Height)/2.0) + (AccelY*10.0);
+		CircleTiltSensor->Position->X = ((PlotGrid1->Width  - CircleTiltSensor->Width )/2.0) - (AccelX*10.0);
+		CircleTiltSensor->Position->Y = ((PlotGrid1->Height - CircleTiltSensor->Height)/2.0) + (AccelY*10.0);
 
 		// Circle の計算上の位置が画面の外にはみ出しそうな場合は、
 		// はみ出さないように計算結果を補正する。
 		{
 			bool outOfRange = false;
 
-			if ( Circle1->Position->X < 0 ) {
-				Circle1->Position->X = 0;
+			if ( CircleTiltSensor->Position->X < 0 ) {
+				CircleTiltSensor->Position->X = 0;
 				outOfRange = true;
 			}
-			else if (Circle1->Position->X > PlotGrid1->Width - Circle1->Width) {
-				Circle1->Position->X = PlotGrid1->Width - Circle1->Width;
+			else if (CircleTiltSensor->Position->X > PlotGrid1->Width - CircleTiltSensor->Width) {
+				CircleTiltSensor->Position->X = PlotGrid1->Width - CircleTiltSensor->Width;
 				outOfRange = true;
 			}
 
-			if ( Circle1->Position->Y < 0 ) {
-				Circle1->Position->Y = 0;
+			if ( CircleTiltSensor->Position->Y < 0 ) {
+				CircleTiltSensor->Position->Y = 0;
 				outOfRange = true;
 			}
-			else if (Circle1->Position->Y > PlotGrid1->Height - Circle1-> Height) {
-				Circle1->Position->Y = PlotGrid1->Height - Circle1-> Height;
+			else if (CircleTiltSensor->Position->Y > PlotGrid1->Height - CircleTiltSensor-> Height) {
+				CircleTiltSensor->Position->Y = PlotGrid1->Height - CircleTiltSensor-> Height;
 				outOfRange = true;
 			}
 
 			// 補正が発生した場合は円の色を赤色に変える。
-			if (outOfRange) Circle1->Stroke->Color = TAlphaColorRec::Red;
-			else            Circle1->Stroke->Color = TAlphaColorRec::Black;
+			if (outOfRange) CircleTiltSensor->Stroke->Color = TAlphaColorRec::Red;
+			else            CircleTiltSensor->Stroke->Color = TAlphaColorRec::Black;
 		}
-		// 取得した加速度情報を Memo1 にログとして記録する。
-//		Memo1->Lines->Insert(
-//			0,
-//			UnicodeString().sprintf(
-//				L"%3.2f = X:%3.2f Y:%3.2f Z:%3.2f",
-//				syntheticAccel, AccelX, AccelY, AccelZ )
-//		);
 	}
 
 	// グラフ描画に関する処理。
@@ -209,24 +196,43 @@ void __fastcall TForm1::Timer1Timer(TObject *Sender)
 		// 最大で直近50件分だけを描画する。
 		const static int axis_x_limit = 50;
 
-		// 3軸の合成加速度をグラフ（TeeChart）に描画する処理。
-		Chart1->Series[0]->AddY(syntheticAccel);
-		Chart1->Series[1]->AddY(AccelX);
-		Chart1->Series[2]->AddY(AccelY);
-		Chart1->Series[3]->AddY(AccelZ);
+		// グラフをスクロールするかどうか
+		const static bool graphScroll = false;
 
-		// 3軸の合成加速度グラフを直近10秒分 ( = 0.2 秒 x 50サンプル ）だけ描画するための横軸範囲の調整。
-		if ( numCount++ > axis_x_limit ) {
-			Chart1->Axes->Bottom->SetMinMax(numCount - axis_x_limit, numCount);
+		if ( graphScroll == true ) {
+		  // グラフをスクロールする実装。
+		  // 通常はこちらを用いたほうが見栄えがよいが、Webセミナーでは使わない方向で。
+		  ChartAccel->Axes->Bottom->SetMinMax(numCount - axis_x_limit, numCount);
 		}
+		else {
+		  // グラフをスクロールせずにページングする例
+		  // GoToWebiner 向けを想定した実装。
+			if ( numCount % axis_x_limit == 0 ) {
+				ChartAccel->Series[0]->Clear();
+				ChartAccel->Series[1]->Clear();
+				ChartAccel->Series[2]->Clear();
+				ChartAccel->Series[3]->Clear();
+				ChartAccel->Axes->Bottom->SetMinMax( 0, axis_x_limit );
+				ChartAccel->Axes->Left->SetMinMax( -(accelCoefficient*2), accelCoefficient*2 );
+			}
+		}
+
+		numCount++;
+
+		// 3軸の加速度や合成加速度をグラフ（TeeChart）に描画する処理。
+		ChartAccel->Series[0]->AddY(syntheticAccel);
+		ChartAccel->Series[1]->AddY(AccelX);
+		ChartAccel->Series[2]->AddY(AccelY);
+		ChartAccel->Series[3]->AddY(AccelZ);
+
 	}
 }
 //---------------------------------------------------------------------------
 // 加速度センサーの値読み込みの on / off 切り替え。
-void __fastcall TForm1::Switch2Switch(TObject *Sender)
+void __fastcall TForm1::SwitchLocationSensorSwitch(TObject *Sender)
 {
 	// Switch2 のステータスをそのまま Timer1 の enabled / disabled に用いる。
-	Timer1->Enabled = Switch2->IsChecked;
+	Timer1->Enabled = SwitchLocationSensor->IsChecked;
 }
 //---------------------------------------------------------------------------
 

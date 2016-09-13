@@ -29,14 +29,13 @@ class TForm1 : public TForm
 __published:	// IDE で管理されるコンポーネント
 	TLocationSensor *LocationSensor1;
 	TMapView *MapView1;
-	TPanel *Panel1;
 	TMemo *Memo1;
-	TButton *Button1;
-	TSwitch *Switch1;
+	TButton *ButtonShowCurrentLocation;
+	TSwitch *SwitchMapView;
 	TTabControl *TabControl1;
-	TTabItem *TabItem1;
-	TTabItem *TabItem2;
-	TTabItem *TabItem3;
+	TTabItem *TabItem1MapView;
+	TTabItem *TabItem4Detail;
+	TTabItem *TabItem2GeoCoder;
 	TListBox *ListBox1;
 	TListBoxGroupHeader *ListBoxGroupHeader1;
 	TListBoxItem *ListBoxItemLatitude;
@@ -53,29 +52,30 @@ __published:	// IDE で管理されるコンポーネント
 	TListBoxItem *ListBoxItemSubThoroughfare;
 	TListBoxItem *ListBoxItemThoroughfare;
 	TMotionSensor *MotionSensor1;
-	TTabItem *TabItem4;
+	TTabItem *TabItem3MotionSensor;
 	TPlotGrid *PlotGrid1;
-	TLayout *Layout1;
-	TLabel *Label1;
-	TLabel *Label2;
-	TLabel *Label3;
-	TTimer *Timer1;
-	TCircle *Circle1;
 	TLayout *Layout2;
-	TLabel *Label4;
-	TChart *Chart1;
-	TLineSeries *Series1;
+	TLabel *Label1AccelX;
+	TLabel *Label2AccelY;
+	TLabel *Label3AccelZ;
+	TTimer *Timer1;
+	TCircle *CircleTiltSensor;
+	TLayout *Layout3;
+	TLabel *LabelSyntheticAccel;
+	TChart *ChartAccel;
+	TLineSeries *SyntheticAccel;
 	TStyleBook *StyleBook1;
-	TSwitch *Switch2;
-	TLineSeries *Series2;
-	TLineSeries *Series3;
-	TLineSeries *Series4;
-	void __fastcall Switch1Switch(TObject *Sender);
+	TSwitch *SwitchLocationSensor;
+	TLineSeries *X;
+	TLineSeries *Y;
+	TLineSeries *Z;
+	TLayout *Layout1;
+	void __fastcall SwitchMapViewSwitch(TObject *Sender);
 	void __fastcall LocationSensor1LocationChanged(TObject *Sender, const TLocationCoord2D &OldLocation,
           const TLocationCoord2D &NewLocation);
-	void __fastcall Button1Click(TObject *Sender);
+	void __fastcall ButtonShowCurrentLocationClick(TObject *Sender);
 	void __fastcall Timer1Timer(TObject *Sender);
-	void __fastcall Switch2Switch(TObject *Sender);
+	void __fastcall SwitchLocationSensorSwitch(TObject *Sender);
 
 
 

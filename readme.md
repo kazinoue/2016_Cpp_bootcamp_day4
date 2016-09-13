@@ -6,3 +6,7 @@ C++ BootCamp の視聴は無料です。以下のページからお申込みい�
 <http://forms.embarcadero.com/cpp-boot-camp-2016>
 
 このサンプルアプリケーションを iOS や Android 向けにビルドするには、C++ Builder Professional + Mobile Addon Pack 以上のエディションが必要です。
+
+また Android で本プロジェクトをビルドする場合は、Google Maps Android API の APIKey をプロジェクトのオプション設定に記述する必要があります。本件については docwiki.embarcadero.com の以下の文書を参考にして作業を行ってください。
+
+<http://docwiki.embarcadero.com/RADStudio/Berlin/ja/Google_マップを使用できるよう_Android_アプリケーションを構成する>
